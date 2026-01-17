@@ -16,29 +16,47 @@ export default async function OrdersPage() {
       customers (
         id,
         full_name
+      ),
+      order_items (
+        quantity,
+        unit_price,
+        services (
+          id,
+          name,
+          category
+        )
       )
     `)
     .order('created_at', { ascending: false })
 
   // Map DB orders to Component orders
-  // Since we haven't implemented order_items fetching in this query yet, we'll mock services/items count for now
-  // or fetch them properly. For speed, let's just map the basics.
+  const orders = (rawOrders || []).map(order => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const items = (order.order_items || []) as any[]
 
-  const orders = (rawOrders || []).map(order => ({
-    id: order.id,
-    customer: order.customers?.full_name || "Unknown",
-    customerId: order.customer_id, // This is a UUID now, not 'CUST-001'
-    services: [], // Placeholder until we fetch order_items
-    items: 0,     // Placeholder
-    amount: order.total_amount,
-    status: order.status,
-    priority: "Normal", // Schema doesn't have priority yet, defaulting
-    orderDate: new Date(order.created_at).toISOString().split('T')[0],
-    dueDate: order.due_date,
-    pickupDate: order.pickup_date,
-    deliveryDate: order.delivery_date,
-    notes: order.notes
-  }))
+    return {
+      id: order.id,
+      customer: order.customers?.full_name || "Unknown",
+      customerId: order.customer_id,
+      services: items.map((i: any) => i.services?.name).filter(Boolean),
+      items: items.reduce((acc: number, i: any) => acc + i.quantity, 0),
+      // Detailed items for editing
+      orderItems: items.map((i: any) => ({
+        serviceId: i.services?.id,
+        serviceName: i.services?.name,
+        quantity: i.quantity,
+        unitPrice: i.unit_price
+      })),
+      amount: order.total_amount,
+      status: order.status,
+      priority: "Normal", // Schema doesn't have priority yet, defaulting
+      orderDate: new Date(order.created_at).toISOString().split('T')[0],
+      dueDate: order.due_date,
+      pickupDate: order.pickup_date,
+      deliveryDate: order.delivery_date,
+      notes: order.notes
+    }
+  })
 
   // Fetch customers for the dropdown
   const { data: customerData } = await supabase

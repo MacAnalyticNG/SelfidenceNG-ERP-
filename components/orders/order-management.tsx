@@ -1,6 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
+import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,10 +16,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Edit, Eye, Calendar, Clock, CheckCircle } from "lucide-react"
+import { Search, Plus, Edit, Eye, Calendar, Clock, CheckCircle, Trash2, FileText } from "lucide-react"
 import { CreateOrderForm } from "./create-order-form"
-import { updateOrderStatus } from "@/lib/actions/orders"
+import { EditOrderForm } from "./edit-order-form"
+import { updateOrderStatus, deleteOrder } from "@/lib/actions/orders"
+
+interface OrderItem {
+  serviceId: string
+  serviceName?: string
+  quantity: number
+  unitPrice: number
+}
 
 interface Order {
   id: string
@@ -33,6 +53,7 @@ interface Order {
   pickupDate: string
   deliveryDate: string | null
   notes: string
+  orderItems?: OrderItem[]
 }
 
 interface OrderManagementProps {
@@ -48,6 +69,12 @@ export function OrderManagement({ initialOrders = [], customers = [], services =
   const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false)
 
 
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [orderToEdit, setOrderToEdit] = useState<Order | null>(null)
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
+
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,11 +89,14 @@ export function OrderManagement({ initialOrders = [], customers = [], services =
       case "pending":
         return "destructive"
       case "in progress":
+      case "in_progress":
         return "outline"
       case "ready":
         return "secondary"
       case "delivered":
         return "default"
+      case "cancelled":
+        return "secondary"
       default:
         return "outline"
     }
@@ -82,6 +112,33 @@ export function OrderManagement({ initialOrders = [], customers = [], services =
         return "bg-gray-100 text-gray-800"
       default:
         return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const handleEditClick = (order: Order) => {
+    setOrderToEdit(order)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleDeleteClick = (order: Order) => {
+    setOrderToDelete(order)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!orderToDelete) return
+
+    try {
+      const result = await deleteOrder(orderToDelete.id)
+      if (result.success) {
+        toast.success("Order deleted successfully")
+        setIsDeleteDialogOpen(false)
+        setOrderToDelete(null)
+      } else {
+        toast.error(result.message || "Failed to delete order")
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred")
     }
   }
 
@@ -180,7 +237,7 @@ export function OrderManagement({ initialOrders = [], customers = [], services =
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in progress">In Progress</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="ready">Ready</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
               </SelectContent>
@@ -264,8 +321,25 @@ export function OrderManagement({ initialOrders = [], customers = [], services =
                       <Button variant="ghost" size="sm">
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/dashboard/orders/${order.id}/invoice`} target="_blank">
+                          <FileText className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditClick(order)}
+                      >
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600"
+                        onClick={() => handleDeleteClick(order)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -275,6 +349,54 @@ export function OrderManagement({ initialOrders = [], customers = [], services =
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Order Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Order</DialogTitle>
+            <DialogDescription>
+              Update order details and services.
+            </DialogDescription>
+          </DialogHeader>
+          {orderToEdit && (
+            <EditOrderForm
+              order={{
+                ...orderToEdit,
+                items: orderToEdit.orderItems || []
+              }}
+              customers={customers}
+              services={services}
+              onSuccess={() => {
+                setIsEditDialogOpen(false)
+                setOrderToEdit(null)
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete order
+              "{orderToDelete?.id}" and all its records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

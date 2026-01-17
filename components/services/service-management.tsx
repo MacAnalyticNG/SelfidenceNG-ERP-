@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,8 +15,33 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Search, Plus, Edit, Trash2 } from "lucide-react"
 import { CreateServiceForm } from "./create-service-form"
+import { EditServiceForm } from "./edit-service-form"
+import { deleteService } from "@/lib/actions/services"
+
+interface InventoryItem {
+    id: string
+    name: string
+    unit: string
+}
+
+interface ServiceMaterial {
+    inventoryItemId: string
+    name?: string
+    unit?: string
+    quantity: number
+}
 
 interface Service {
     id: string
@@ -24,21 +50,58 @@ interface Service {
     price: number
     category: string
     isActive: boolean
+    materials?: ServiceMaterial[]
 }
 
 interface ServiceManagementProps {
     initialServices?: Service[]
+    inventoryItems?: InventoryItem[]
 }
 
-export function ServiceManagement({ initialServices = [] }: ServiceManagementProps) {
+export function ServiceManagement({ initialServices = [], inventoryItems = [] }: ServiceManagementProps) {
     const [services, setServices] = useState<Service[]>(initialServices)
     const [searchTerm, setSearchTerm] = useState("")
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+
+    // Edit State
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null)
+
+    // Delete State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
 
     const filteredServices = services.filter((service) =>
         service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         service.category.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    const handleDeleteClick = (service: Service) => {
+        setServiceToDelete(service)
+        setIsDeleteDialogOpen(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!serviceToDelete) return
+
+        try {
+            const result = await deleteService(serviceToDelete.id)
+            if (result.success) {
+                toast.success("Service deleted successfully")
+                setIsDeleteDialogOpen(false)
+                setServiceToDelete(null)
+            } else {
+                toast.error(result.message || "Failed to delete service")
+            }
+        } catch (error) {
+            toast.error("An unexpected error occurred")
+        }
+    }
+
+    const handleEditClick = (service: Service) => {
+        setServiceToEdit(service)
+        setIsEditDialogOpen(true)
+    }
 
     return (
         <div className="space-y-6">
@@ -61,7 +124,7 @@ export function ServiceManagement({ initialServices = [] }: ServiceManagementPro
                                 Create a new service offering for your customers.
                             </DialogDescription>
                         </DialogHeader>
-                        <CreateServiceForm onSuccess={() => setIsAddDialogOpen(false)} />
+                        <CreateServiceForm inventoryItems={inventoryItems} onSuccess={() => setIsAddDialogOpen(false)} />
                     </DialogContent>
                 </Dialog>
             </div>
@@ -120,10 +183,19 @@ export function ServiceManagement({ initialServices = [] }: ServiceManagementPro
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center space-x-2">
-                                            <Button variant="ghost" size="sm">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleEditClick(service)}
+                                            >
                                                 <Edit className="w-4 h-4" />
                                             </Button>
-                                            <Button variant="ghost" size="sm" className="text-red-600">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-600"
+                                                onClick={() => handleDeleteClick(service)}
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
@@ -134,6 +206,49 @@ export function ServiceManagement({ initialServices = [] }: ServiceManagementPro
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Service</DialogTitle>
+                        <DialogDescription>
+                            Update service details.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {serviceToEdit && (
+                        <EditServiceForm
+                            service={serviceToEdit}
+                            onSuccess={() => {
+                                setIsEditDialogOpen(false)
+                                setServiceToEdit(null)
+                            }}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the service
+                            "{serviceToDelete?.name}" from the database.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
