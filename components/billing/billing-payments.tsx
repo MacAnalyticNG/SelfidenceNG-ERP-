@@ -129,7 +129,21 @@ const payments = [
   },
 ]
 
-export function BillingPayments() {
+interface BillingPaymentsProps {
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
+}
+
+export function BillingPayments({ user }: BillingPaymentsProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)

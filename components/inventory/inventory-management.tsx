@@ -41,9 +41,20 @@ interface InventoryItem {
 
 interface InventoryManagementProps {
   initialInventory?: InventoryItem[]
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
 }
 
-export function InventoryManagement({ initialInventory = [] }: InventoryManagementProps) {
+export function InventoryManagement({ initialInventory = [], user }: InventoryManagementProps) {
   const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory)
   const [searchTerm, setSearchTerm] = useState("")
 

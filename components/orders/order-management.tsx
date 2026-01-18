@@ -60,9 +60,20 @@ interface OrderManagementProps {
   initialOrders?: Order[]
   customers?: { id: string; name: string }[]
   services?: { id: string; name: string; price: number; category: string }[]
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
 }
 
-export function OrderManagement({ initialOrders = [], customers = [], services = [] }: OrderManagementProps) {
+export function OrderManagement({ initialOrders = [], customers = [], services = [], user }: OrderManagementProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")

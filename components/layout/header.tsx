@@ -8,12 +8,19 @@ import { UserNav } from "@/components/layout/user-nav"
 import { usePathname } from "next/navigation"
 
 interface HeaderProps {
+  activeModule?: string
   sidebarCollapsed: boolean
   setSidebarCollapsed: (collapsed: boolean) => void
   user: {
+    id: string
     email: string
     full_name: string
     role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
   }
 }
 

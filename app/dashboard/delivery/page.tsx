@@ -1,0 +1,23 @@
+import { createServerClient } from "@/lib/supabase/server"
+import { DeliveryTracking } from "@/components/delivery/delivery-tracking"
+
+export default async function DeliveryPage() {
+    const supabase = await createServerClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*, branches(id, name)')
+        .eq('id', authUser?.id)
+        .single()
+
+    const user = {
+        id: authUser?.id || '',
+        email: authUser?.email || '',
+        full_name: profile?.full_name || '',
+        role: profile?.role || 'staff',
+        branch_id: profile?.branch_id || null,
+        branches: profile?.branches
+    }
+
+    return <DeliveryTracking user={user} />
+}

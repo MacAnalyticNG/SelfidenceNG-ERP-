@@ -23,15 +23,20 @@ import {
 } from "lucide-react"
 
 interface SidebarProps {
+  activeModule?: string
+  setActiveModule?: (module: string) => void
   collapsed: boolean
   setCollapsed: (collapsed: boolean) => void
   user: {
+    id: string
+    email: string
     full_name: string
     role: string
     branch_id: string | null
     branches?: {
+      id: string
       name: string
-    } | null
+    } | null | undefined
   }
 }
 

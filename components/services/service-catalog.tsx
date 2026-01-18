@@ -16,7 +16,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Edit, Shirt, Droplets, Icon as Iron, Scissors, Clock } from "lucide-react"
+import { Search, Plus, Edit, Shirt, Droplets, Scissors, Clock } from "lucide-react"
 
 const services = [
   {
@@ -291,7 +291,21 @@ const pricingTiers = [
   { name: "VIP", multiplier: 2.0, description: "Priority service with extras" },
 ]
 
-export function ServiceCatalog() {
+interface ServiceCatalogProps {
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
+}
+
+export function ServiceCatalog({ user }: ServiceCatalogProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState(false)
@@ -321,8 +335,6 @@ export function ServiceCatalog() {
         return <Shirt className="w-5 h-5" />
       case "droplets":
         return <Droplets className="w-5 h-5" />
-      case "iron":
-        return <Iron className="w-5 h-5" />
       case "scissors":
         return <Scissors className="w-5 h-5" />
       case "clock":

@@ -87,7 +87,21 @@ const drivers = [
   },
 ]
 
-export function DeliveryTracking() {
+interface DeliveryTrackingProps {
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
+}
+
+export function DeliveryTracking({ user }: DeliveryTrackingProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 

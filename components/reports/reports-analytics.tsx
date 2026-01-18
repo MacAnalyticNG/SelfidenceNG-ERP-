@@ -53,7 +53,21 @@ const dailyTrends = [
   { day: "Sun", orders: 32, revenue: 890 },
 ]
 
-export function ReportsAnalytics() {
+interface ReportsAnalyticsProps {
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
+}
+
+export function ReportsAnalytics({ user }: ReportsAnalyticsProps) {
   const totalRevenue = monthlyData.reduce((sum, item) => sum + item.revenue, 0)
   const totalOrders = monthlyData.reduce((sum, item) => sum + item.orders, 0)
   const avgOrderValue = totalRevenue / totalOrders

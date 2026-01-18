@@ -21,7 +21,7 @@ export function QRReceipt({ orderId, customerName, amount, date }: QRReceiptProp
       const qrData = `LAUNDRY-${orderId}-${customerName}`
 
       if (canvasRef.current) {
-        QRCode.toCanvas(canvasRef.current, qrData, { width: 200 }, (error) => {
+        QRCode.toCanvas(canvasRef.current, qrData, { width: 200 }, (error: Error | null | undefined) => {
           if (error) console.error("QR Code generation error:", error)
         })
       }

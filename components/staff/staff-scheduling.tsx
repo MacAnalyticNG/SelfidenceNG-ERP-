@@ -108,7 +108,21 @@ const schedules = [
   },
 ]
 
-export function StaffScheduling() {
+interface StaffSchedulingProps {
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    branch_id: string | null
+    branches?: {
+      id: string
+      name: string
+    } | null | undefined
+  }
+}
+
+export function StaffScheduling({ user }: StaffSchedulingProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false)
